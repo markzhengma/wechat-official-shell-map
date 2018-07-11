@@ -1,0 +1,411 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+        <script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=ygiWYb4B3RVLXFgkNGDZLrYV0jKawnH1"></script>
+        <script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+        <title>门店查询系统</title>
+    </head>
+    <body>
+        <div class = "map-page">
+            <div class = "header">
+                <b><small>呼伦贝尔市壳牌汽车养护中心</small></b>
+                <b>门店查询</b>
+            </div>
+            <!-- <div class = "instruction">
+                <p>请点击地图上的门店图标或展开下方门店列表点击门店名称查看详情</p>
+            </div> -->
+            <div id = "map-container">
+                <div id = "container"></div>
+                <div id = "distance-duration-container">
+                    <p id = "description">当前规划</p>
+                    <p id = "closest-banner"></p>
+                    <p id = "distance-p"></p>
+                    <p id = "duration-p"></p>
+                </div>
+            </div>
+            <div id = "banner-store-container">
+                <div id = "hide-show-list-btn">显示/隐藏门店列表</div>
+                <div id = "current-store">
+                    <div class = "title-row">
+                        <h4 id = "current-name"></h4>
+                        <button id = "current-btn"></button>
+                    </div>
+                    <a id = "current-tel"></a>
+                    <p id = "current-address"></p>
+                </div>
+                <div id = "store-list"></div>
+            </div>
+        </div>
+    </body>
+</html>
+<script type="text/javascript">
+
+    var storePoints = [  
+        {"lng": 119.784342, "lat": 49.225553, "name": "海拉尔河东店", "tel": "0470-8223779", "address": "海拉尔河东加格达奇路109综合楼1号门市"},  
+        {"lng": 119.755715, "lat": 49.23229, "name": "海拉尔河西店", "tel": "0470-8307711", "address": "海拉尔河西碧海金城夹信子二道街路口"},  
+        {"lng": 117.449949, "lat": 49.599737, "name": "满洲里四道街店", "tel": "0470-2205900", "address": "满洲里四道街西头车之美宾馆西侧门市 "},
+        {"lng": 117.503674, "lat": 49.58917, "name": "满洲里粮库综合楼店", "tel": "0470-6221541", "address": "满洲里粮库综合楼5号门市"}, 
+        {"lng": 120.718067, "lat": 49.285365, "name": "牙克石光明南路店", "tel": "0470-7379457", "address": "牙克石光明南路民生B区26号楼9号门市"}  
+    ];
+
+    var map = new BMap.Map("container");
+
+    var longitude = 0;
+    var latitude = 0;
+    var closestStoreLng = 0;
+    var closestStoreLat = 0;
+    var closestIndex = 0;
+    var shortestDistance = 0;
+
+    function addMarker(storePoints) {
+        var icon = new BMap.Icon("./assets/shell_icon.png", new BMap.Size(20, 20), {
+            imageSize: new BMap.Size(20, 20)  
+            // offset: new BMap.Size(10, 10),              // 定位图标尺寸  
+            // imageOffset: new BMap.Size(0, 0 - 11 * 25)  // 设置图片偏移  
+        }); 
+        console.log(icon);
+        //循环建立标注点
+        for(var i = 0, pointsLen = storePoints.length; i < pointsLen; i ++) {
+            var point = new BMap.Point(storePoints[i].lng, storePoints[i].lat); //将标注点转化成地图上的点
+            var marker = new BMap.Marker(point, {icon: icon}); //将点转化成标注点
+            marker.disableMassClear();
+            map.addOverlay(marker);  //将标注点添加到地图上
+
+            createStoreList(i, storePoints[i].name, storePoints[i].address, storePoints[i].tel, storePoints[i].lng, storePoints[i].lat);
+
+            var myPoint = new BMap.Point(longitude, latitude);
+            var targetPoint = new BMap.Point(storePoints[i].lng, storePoints[i].lat);
+            var distance = map.getDistance(myPoint, targetPoint);
+            if(shortestDistance === 0 || shortestDistance > distance){
+                closestStoreLng = storePoints[i].lng;
+                closestStoreLat = storePoints[i].lat;
+                closestIndex = i;
+                shortestDistance = distance;
+                console.log(shortestDistance);
+            }
+            if(i === 4){
+                showDrivingRoute(closestStoreLng, closestStoreLat);
+                selectStore(storePoints[closestIndex].name, storePoints[closestIndex].address, storePoints[closestIndex].tel, storePoints[closestIndex].lng, storePoints[closestIndex].lat);
+                document.getElementById(`store-single-${closestIndex}`).style.maxHeight = "0";
+            }
+
+            //添加监听事件
+            (function() {
+                var thePoint = storePoints[i];
+                marker.addEventListener("click",
+                    //显示信息的方法
+                    function() {
+                        showInfo(this, thePoint);
+                    }
+                );
+            })();  
+        }
+    };
+
+    function showInfo(thisMarker, point) {
+        //获取点的信息
+        var sContent = 
+            '<div class = "info-window">'
+            + '<b class = "info-window-title"><div class = "logo"></div>' + point.name + '</b>'
+            + `<a class = "info-window-tel" href = "tel:+86-${point.tel}"><i class="fas fa-phone-volume"></i>` + point.tel + '</a>'
+            + '<p class = "info-window-address">' + point.address + '</p>'
+            + `<button class = "info-window-btn" onclick = "showDrivingRoute(${point.lng}, ${point.lat})">` + "到这里去" + '</button>'
+            + '</div>';
+        var infoWindow = new BMap.InfoWindow(sContent); //创建信息窗口对象
+        thisMarker.openInfoWindow(infoWindow); //图片加载完后重绘infoWindow
+    };
+
+    function showDrivingRoute(lng, lat){
+        map.clearOverlays();
+        // var driving = new BMap.DrivingRoute(map);
+        // driving.search(new BMap.Point(longitude, latitude), new BMap.Point(lng, lat));
+        // driving.setSearchCompleteCallback(function(){
+        //     var pts = driving.getResults().getPlan(0).getRoute(0).getPath();
+        //     var polyline = new BMap.Polyline(pts);
+        //     map.addOverlay(polyline);
+
+        //     setTimeout(function(){
+        //         map.setViewport([new BMap.Point(longitude, latitude), new BMap.Point(lng, lat)]);
+        //     }, 1000);
+        // });
+
+        var searchComplete = function (results){
+            if (transit.getStatus() != BMAP_STATUS_SUCCESS){
+                return ;
+            }
+            var plan = results.getPlan(0);
+            
+            var closestBanner = document.getElementById("closest-banner");
+            closestBanner.innerHTML = "";
+            var distanceP = document.getElementById("distance-p");
+            distanceP.innerHTML = "估计路程：" + plan.getDistance(true);
+            var durationP = document.getElementById("duration-p");
+            durationP.innerHTML = "估计驾驶时间：" + plan.getDuration(true);
+            if(lng === closestStoreLng && lat === closestStoreLat){
+                closestBanner.innerHTML = "距离最近";
+            }
+        }
+
+        var transit = new BMap.DrivingRoute(
+            map, 
+            {renderOptions: {map: map},
+            onSearchComplete: searchComplete,
+            onMarkersSet: function(routes){
+                map.removeOverlay(routes[0].marker);
+                map.removeOverlay(routes[1].marker);
+            }
+        });
+        transit.search(new BMap.Point(longitude, latitude), new BMap.Point(lng, lat));
+        // showDurationAndDistance(lng, lat);
+    };
+
+    var storeList = document.getElementById("store-list");
+
+    function createStoreList(i, name, address, tel, lng, lat){
+        var storeSingle = document.createElement("div");
+        storeSingle.setAttribute("id", `store-single-${i}`);
+        storeSingle.setAttribute("class", 'store-single');
+        storeSingle.addEventListener("click", function(){
+            map.centerAndZoom(new BMap.Point(lng, lat), 18);
+            selectStore(name, address, tel, lng, lat);
+            var storeListChild = document.querySelectorAll(".store-single");
+            for(var i = 0; i < storeListChild.length; i ++){
+                storeListChild[i].style.maxHeight = "500px";
+            }
+            storeSingle.style.maxHeight = "0";
+            // storeSingle.style.color = "red";
+        })
+        storeList.appendChild(storeSingle);
+        var titleRow = document.createElement("div");
+        titleRow.setAttribute("class", "title-row");
+        storeSingle.appendChild(titleRow);
+        var nameSingle = document.createElement("h4");
+        nameSingle.innerHTML = name;
+        titleRow.appendChild(nameSingle);
+        var logo = document.createElement("div");
+        logo.setAttribute("class", "logo");
+        nameSingle.insertBefore(logo, nameSingle.firstChild);
+        var telSingle = document.createElement("a");
+        telSingle.innerHTML = '<i class="fas fa-phone-volume"></i>' + tel;
+        telSingle.setAttribute("href", `tel:+86-${tel}`);
+        storeSingle.appendChild(telSingle);
+        var addressSingle = document.createElement("p");
+        addressSingle.innerHTML = address;
+        storeSingle.appendChild(addressSingle);
+        var btnSingle = document.createElement("button");
+        btnSingle.innerHTML = "到这里去";
+        btnSingle.addEventListener("click", function(){
+            showDrivingRoute(lng, lat)
+        });
+        titleRow.appendChild(btnSingle);
+
+        var hideShowListBtn = document.getElementById("hide-show-list-btn");
+        var disDuraContainer = document.getElementById("distance-duration-container");
+        hideShowListBtn.addEventListener("click", function(){
+            console.log(storeList.clientHeight / window.innerHeight * 100);
+            if (Math.round(storeList.clientHeight / window.innerHeight * 100) === 50){
+                storeList.style.height = "0";
+                disDuraContainer.style.opacity = "1";
+            } else if (storeList.clientHeight === 0){
+                storeList.style.height = "50vh";
+                disDuraContainer.style.opacity = "0";
+            }
+        })
+    }
+
+    function selectStore(name, address, tel, lng, lat){
+        var currentName = document.getElementById("current-name");
+        currentName.innerHTML = name;
+        var logo = document.createElement("div");
+        logo.setAttribute("class", "logo");
+        currentName.insertBefore(logo, currentName.firstChild);
+        var currentAddress = document.getElementById("current-address");
+        currentAddress.innerHTML = address;
+        var currentTel = document.getElementById("current-tel");
+        currentTel.innerHTML = '<i class="fas fa-phone-volume"></i>' + tel;
+        currentTel.setAttribute("href", `tel:+86-${tel}`);
+        var currentBtn = document.getElementById("current-btn");
+        currentBtn.innerHTML = "到这里去";
+        selectLng = lng;
+        selectLat = lat;
+
+        var hideShowListBtn = document.getElementById("hide-show-list-btn");
+        var disDuraContainer = document.getElementById("distance-duration-container");
+        if (storeList.clientHeight / window.innerHeight * 100 === 50){
+            storeList.style.height = "0";
+            disDuraContainer.style.opacity = "1";
+        } else if (storeList.clientHeight === 0){
+            storeList.style.height = "50vh";
+            disDuraContainer.style.opacity = "0";
+        }
+    }
+
+    var selectLng = 0;
+    var selectLat = 0;
+    var currentBtn = document.getElementById("current-btn");
+    currentBtn.addEventListener("click", function(){
+        showDrivingRoute(selectLng, selectLat)
+    });
+
+    function showDurationAndDistance(lng, lat){
+        var myPoint = new BMap.Point(longitude, latitude);
+        var targetPoint = new BMap.Point(lng, lat);
+        var distance = map.getDistance(myPoint, targetPoint);
+        console.log(distance);
+    }
+
+    // 调用HTML5 GeoLocation API获取地理位置
+    function getLocation(){
+
+        document.getElementById('container').innerHTML = '正在搜寻中，请稍候。。。';
+
+        var options = {
+            enableHighAccuracy:true, 
+            maximumAge:1000
+        }
+
+        if(navigator.geolocation){
+            //浏览器支持geolocation
+            navigator.geolocation.getCurrentPosition(onSuccess,onError,options);
+        }else{
+            //浏览器不支持geolocation
+            alert('浏览器不支持GeoLocation!');
+        }
+    }
+    
+
+    // 获取成功
+    function onSuccess(position){
+        console.log(position);
+        // 经度
+        var longitude =position.coords.longitude;
+
+        // 纬度
+        var latitude = position.coords.latitude;
+
+        // 使用百度地图API创建地图实例  
+        var map =new BMap.Map("container");
+
+        map.addControl(new BMap.NavigationControl());
+
+        // 创建一个坐标
+        var point =new BMap.Point(longitude,latitude);
+
+        // 地图初始化，设置中心点坐标和地图级别  
+        map.centerAndZoom(point, 16);
+
+        // 设置标注的图标,可自己定义图标
+        var icon = new BMap.Icon("http://api.map.baidu.com/img/markers.png", new BMap.Size(23, 25), {  
+            offset: new BMap.Size(10, 25),              // 定位图标尺寸  
+            imageOffset: new BMap.Size(0, 0 - 11 * 25)  // 设置图片偏移  
+        }); 
+
+        // 设置标注的经纬度
+        var marker = new BMap.Marker(new BMap.Point(longitude,latitude),{icon:icon});
+        marker.disableMassClear();
+
+        // 把标注添加到地图上
+        map.addOverlay(marker);
+
+        // 设置点击事件
+        marker.addEventListener("click", function(){
+            alert("经度:" + longitude + ", 纬度:" + latitude);
+        });
+
+        addMarker(storePoints);
+    }
+
+    // 获取失败
+    function onError(error){
+        switch(error.code){
+            case 1:
+                alert("位置服务被拒绝");
+            break;
+
+            case 2:
+                alert("暂时获取不到位置信息");
+            break;
+
+            case 3:
+                alert("获取信息超时");
+            break;
+
+            case 4:
+                alert("未知错误");
+            break;
+        }
+    }
+    
+    // function getLocation(){
+    //     // 经度
+    //     longitude = 119.780342;
+
+    //     // 纬度
+    //     latitude = 49.220553;
+
+    //     // // 使用百度地图API创建地图实例  
+    //     // var map =new BMap.Map("container");
+
+    //     map.addControl(new BMap.NavigationControl());
+
+    //     // 创建一个坐标
+    //     var point =new BMap.Point(longitude,latitude);
+
+    //     // 地图初始化，设置中心点坐标和地图级别  
+    //     map.centerAndZoom(point, 14);
+
+    //     // 设置标注的图标,可自己定义图标
+    //     var icon = new BMap.Icon("./assets/car_icon.png", new BMap.Size(44, 44), {  
+    //         imageSize: new BMap.Size(44, 44)
+    //     }); 
+
+    //     // 设置标注的经纬度
+    //     var marker = new BMap.Marker(new BMap.Point(longitude,latitude),{icon:icon});
+    //     marker.disableMassClear();
+
+    //     // 把标注添加到地图上
+    //     map.addOverlay(marker);
+
+    //     // 添加位置标签
+    //     var lablePoint = new BMap.Point(longitude, latitude);
+    //     var opts = {
+    //         offset : new BMap.Size(-28, 20),
+    //         position : lablePoint    // 指定文本标注所在的地理位置
+    //     }
+    //     var label = new BMap.Label("您的位置", opts);  // 创建文本标注对象
+    //     label.setStyle({
+    //         color : "#F9D148",
+    //         background : "grey",
+    //         border : "#F9D148 solid 1px",
+    //         fontSize : "12px",
+    //         height : "fit-content",
+    //         width : "fit-content",
+    //         padding : "2px",
+    //         lineHeight : "20px",
+    //         opacity : "0",
+    //         transition : "opacity 0.3s ease-in-out"
+    //     });
+    //     map.addOverlay(label);   
+
+    //     function showLabel(){
+    //         label.setStyle({
+    //             opacity : "1"
+    //         })
+    //     }
+
+    //     // 设置点击事件
+    //     marker.addEventListener("click", function(){
+    //         console.log("经度:" + longitude + ", 纬度:" + latitude);
+    //         showLabel();
+    //     });
+
+    //     addMarker(storePoints);
+
+    // }
+
+    window.onload = getLocation;
+    
+</script>
