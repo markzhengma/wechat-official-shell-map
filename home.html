@@ -84,7 +84,6 @@
                 closestStoreLat = storePoints[i].lat;
                 closestIndex = i;
                 shortestDistance = distance;
-                console.log(shortestDistance);
             }
             if(i === 4){
                 showDrivingRoute(closestStoreLng, closestStoreLat);
@@ -119,8 +118,6 @@
     };
 
     function showDrivingRoute(lng, lat){
-        console.log(lng + "," + lat);
-        console.log(longitude + "," + latitude);
         map.clearOverlays();
         // var driving = new BMap.DrivingRoute(map);
         // driving.search(new BMap.Point(longitude, latitude), new BMap.Point(lng, lat));
@@ -210,7 +207,6 @@
         var hideShowListBtn = document.getElementById("hide-show-list-btn");
         var disDuraContainer = document.getElementById("distance-duration-container");
         hideShowListBtn.addEventListener("click", function(){
-            console.log(storeList.clientHeight / window.innerHeight * 100);
             if (Math.round(storeList.clientHeight / window.innerHeight * 100) === 50){
                 storeList.style.height = "0";
                 disDuraContainer.style.opacity = "1";
@@ -286,28 +282,46 @@
     function onSuccess(position){
         console.log(position);
         // 经度
-        longitude =position.coords.longitude;
+        longitude = position.coords.longitude;
 
         // 纬度
         latitude = position.coords.latitude;
 
-        $.ajax({
-            type: "post",
-            dataType: "JSONP",
-            url: 'https://api.map.baidu.com/geoconv/v1/?coords=' + longitude + ',' + latitude + '&from=1&to=5&ak=ygiWYb4B3RVLXFgkNGDZLrYV0jKawnH1',
-            async:false,
-            success: function (response) {
-                var data = response.result;
-                longitude = data[0].x;
-                latitude = data[0].y;
-            }
-        });
+        // $.ajax({
+        //     type: "post",
+        //     dataType: "JSONP",
+        //     url: 'https://api.map.baidu.com/geoconv/v1/?coords=' + longitude + ',' + latitude + '&from=1&to=5&ak=ygiWYb4B3RVLXFgkNGDZLrYV0jKawnH1',
+        //     async:false,
+        //     success: function (response) {
+        //         var data = response.result;
+        //         longitude = data[0].x;
+        //         latitude = data[0].y;
+        //         console.log(data);
+        //     }
+        // });
+
+        var x_PI = 3.14159265358979324 * 3000.0 / 180.0;
+        var PI = 3.1415926535897932384626;
+        var a = 6378245.0;
+        var ee = 0.00669342162296594323;
+
+        // function gcj02tobd09(lng, lat) {
+        var z = Math.sqrt(longitude * longitude + latitude * latitude) + 0.00002 * Math.sin(latitude * x_PI);
+        var theta = Math.atan2(latitude, longitude) + 0.000003 * Math.cos(longitude * x_PI);
+        var bd_lng = z * Math.cos(theta) + 0.0065;
+        var bd_lat = z * Math.sin(theta) + 0.006;
+        latitude = bd_lat;
+        longitude = bd_lng;
+        // }
+
 
         map = new BMap.Map("container");
 
         map.addControl(new BMap.NavigationControl());
 
         // 创建一个坐标
+        console.log(longitude);
+        console.log(latitude);
         var point =new BMap.Point(longitude,latitude);
 
         // 地图初始化，设置中心点坐标和地图级别  
