@@ -291,6 +291,18 @@
         // 纬度
         latitude = position.coords.latitude;
 
+        $.ajax({
+            type: "post",
+            dataType: "JSONP",
+            url: 'https://api.map.baidu.com/geoconv/v1/?coords=' + longitude + ',' + latitude + '&from=1&to=5&ak=ygiWYb4B3RVLXFgkNGDZLrYV0jKawnH1',
+            async:false,
+            success: function (response) {
+                var data = response.result;
+                longitude = data[0].x;
+                latitude = data[0].y;
+            }
+        });
+
         map = new BMap.Map("container");
 
         map.addControl(new BMap.NavigationControl());
