@@ -49,7 +49,8 @@
         {"lng": 119.755715, "lat": 49.23229, "name": "海拉尔河西店", "tel": "0470-8307711", "address": "海拉尔河西碧海金城夹信子二道街路口"},  
         {"lng": 117.449949, "lat": 49.599737, "name": "满洲里四道街店", "tel": "0470-2205900", "address": "满洲里四道街西头车之美宾馆西侧门市 "},
         {"lng": 117.503674, "lat": 49.58917, "name": "满洲里粮库综合楼店", "tel": "0470-6221541", "address": "满洲里粮库综合楼5号门市"}, 
-        {"lng": 120.718067, "lat": 49.285365, "name": "牙克石光明南路店", "tel": "0470-7379457", "address": "牙克石光明南路民生B区26号楼9号门市"}  
+        {"lng": 120.718067, "lat": 49.285365, "name": "牙克石光明南路店", "tel": "0470-7379457", "address": "牙克石光明南路民生B区26号楼9号门市"},
+        {"lng": 120.723473, "lat": 49.285071, "name": "牙克石一道街店", "tel": "130 8852 0439", "address": "牙克石市一道街西润泽园小区门市（原铁路中学）"}  
     ];
 
 
@@ -85,7 +86,7 @@
                 closestIndex = i;
                 shortestDistance = distance;
             }
-            if(i === 4){
+            if(i === 5){
                 showDrivingRoute(closestStoreLng, closestStoreLat);
                 selectStore(storePoints[closestIndex].name, storePoints[closestIndex].address, storePoints[closestIndex].tel, storePoints[closestIndex].lng, storePoints[closestIndex].lat);
                 document.getElementById(`store-single-${closestIndex}`).style.maxHeight = "0";
