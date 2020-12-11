@@ -3,7 +3,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
         <link rel="stylesheet" href="styles.css">
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
+        <!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous"> -->
         <title>门店查询系统</title>
     </head>
     <body>
@@ -31,7 +31,7 @@
                         <h4 id = "current-name"></h4>
                         <button id = "current-btn"></button>
                     </div>
-                    <a id = "current-tel"></a>
+                    <a id = "current-tel" class = "info-window-tel"></a>
                     <p id = "current-address"></p>
                 </div>
                 <div id = "store-list"></div>
@@ -39,7 +39,7 @@
         </div>
     </body>
 </html>
-<script type="text/javascript" src="https://api.map.baidu.com/getscript?v=2.0&ak=ygiWYb4B3RVLXFgkNGDZLrYV0jKawnH1"></script>
+<script type="text/javascript" src="https://api.map.baidu.com/getscript?v=2.0&ak=ygiWYb4B3RVLXFgkNGDZLrYV0jKawnH1&s=1"></script>
 <script type="text/javascript" src="https://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
 <script type="text/javascript">
     var map;
@@ -110,7 +110,7 @@
         var sContent = 
             '<div class = "info-window">'
             + '<b class = "info-window-title"><div class = "logo"></div>' + point.name + '</b>'
-            + `<a class = "info-window-tel" href = "tel:+86-${point.tel}"><i class="fas fa-phone-volume"></i>` + point.tel + '</a>'
+            + `<a class = "info-window-tel" href = "tel:+86-${point.tel}"><div class="icon-phone"></div><div>${point.tel}</div></a>`
             + '<p class = "info-window-address">' + point.address + '</p>'
             + `<button class = "info-window-btn" onclick = "showDrivingRoute(${point.lng}, ${point.lat})">` + "到这里去" + '</button>'
             + '</div>';
@@ -192,7 +192,8 @@
         logo.setAttribute("class", "logo");
         nameSingle.insertBefore(logo, nameSingle.firstChild);
         var telSingle = document.createElement("a");
-        telSingle.innerHTML = '<i class="fas fa-phone-volume"></i>' + tel;
+        telSingle.innerHTML = `<div class="icon-phone"></div><div>${tel}</div>`;
+        telSingle.setAttribute("class", "info-window-tel");
         telSingle.setAttribute("href", `tel:+86-${tel}`);
         storeSingle.appendChild(telSingle);
         var addressSingle = document.createElement("p");
@@ -227,7 +228,7 @@
         var currentAddress = document.getElementById("current-address");
         currentAddress.innerHTML = address;
         var currentTel = document.getElementById("current-tel");
-        currentTel.innerHTML = '<i class="fas fa-phone-volume"></i>' + tel;
+        currentTel.innerHTML = `<div class="icon-phone"></div><div>${tel}</div>`;
         currentTel.setAttribute("href", `tel:+86-${tel}`);
         var currentBtn = document.getElementById("current-btn");
         currentBtn.innerHTML = "到这里去";

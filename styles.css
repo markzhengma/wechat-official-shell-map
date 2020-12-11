@@ -162,6 +162,23 @@ i{
     width: 20px;
     margin-right: 5px;
 }
+
+.info-window-tel {
+    display: flex;
+    align-items: center;
+    padding: 4px;
+}
+
+.icon-phone {
+    height: 14px;
+    width: 14px;
+    margin-right: 4px;
+    background-image: url('./assets/phone.png');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
 /* @media screen and (min-width: 320px) and (max-width: 767px) and (orientation: landscape) {
     html {
       transform: rotate(-90deg);
